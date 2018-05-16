@@ -452,6 +452,33 @@ class ConfigType extends AbstractType
         );
 
         $builder->add(
+            'default_daterange_values',
+            'choice',
+            [
+                'choices' => [
+                    'P0D'   => 'mautic.core.daterange_values.0day',
+                    'P0D'  => 'mautic.core.daterange_values.0day',
+                    'P0D'  => 'mautic.core.daterange_values.0day',
+                    'P0D'  => 'mautic.core.daterange_values.0day',
+                    'P0D'  => 'mautic.core.daterange_values.0day',
+                    'P0D'  => 'mautic.core.daterange_values.0day',
+                    'P0D'  => 'mautic.core.daterange_values.0day',
+                    'P0D' => 'mautic.core.daterange_values.0day',
+                ],
+                'expanded'   => false,
+                'multiple'   => false,
+                'label'      => 'mautic.core.config.form.default.pagelimit',
+                'label_attr' => ['class' => 'control-label'],
+                'attr'       => [
+                    'class'   => 'form-control',
+                    'tooltip' => 'mautic.core.config.form.default.pagelimit.tooltip',
+                ],
+                'required'    => false,
+                'empty_value' => false,
+            ]
+        );
+
+        $builder->add(
             'ip_lookup_service',
             'choice',
             [
