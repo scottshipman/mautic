@@ -638,14 +638,56 @@ class CampaignController extends AbstractStandardFormController
                 $objectId = $args['objectId'];
                 // Init the date range filter form
                 $dateRangeValues = $this->request->get('daterange', []);
-                $action          = $this->generateUrl('mautic_campaign_action', ['objectAction' => 'view', 'objectId' => $objectId]);
-                $dateRangeForm   = $this->get('form.factory')->create('daterange', $dateRangeValues, ['action' => $action]);
+                $tabDataMode     = empty($dateRangeValues) ?
+                    [
+                        'toDate' => ['class' => 'btn-success', 'checked' => 'checked="checked"'],
+                        'byDate' => ['class' => '', 'checked' => ''],
+                    ] :
+                    [
+                        'toDate' => ['class' => '', 'checked' => ''],
+                        'byDate' => ['class' => 'btn-success', 'checked' => 'checked="checked"'],
+                    ];
+                $action          = $this->generateUrl(
+                    'mautic_campaign_action',
+                    ['objectAction' => 'view', 'objectId' => $objectId]
+                );
+                $dateRangeForm   = $this->get('form.factory')->create(
+                    'daterange',
+                    $dateRangeValues,
+                    ['action' => $action]
+                );
+                // prepare date values to pass in to event query
+                $dateFrom = (empty($dateRangeValues['date_from'])) ?
+                    new \DateTime('midnight')
+                    :
+                    new \DateTime($dateRangeValues['date_from']);
+                $dateTo                       = (empty($dateRangeValues['date_to']))
+                    ?
+                    new \DateTime('midnight')
+                    :
+                    new \DateTime($dateRangeValues['date_to']);
+                $dateRangeValues['date_from'] = $dateFrom;
+                $dateRangeValues['date_to']   = $dateTo;
 
                 /** @var LeadEventLogRepository $eventLogRepo */
-                $eventLogRepo      = $this->getDoctrine()->getManager()->getRepository('MauticCampaignBundle:LeadEventLog');
-                $events            = $this->getCampaignModel()->getEventRepository()->getCampaignEvents($entity->getId());
-                $leadCount         = $this->getCampaignModel()->getRepository()->getCampaignLeadCount($entity->getId());
-                $campaignLogCounts = $eventLogRepo->getCampaignLogCounts($entity->getId(), false, false);
+                $eventLogRepo      = $this->getDoctrine()->getManager()->getRepository(
+                    'MauticCampaignBundle:LeadEventLog'
+                );
+                $events            = $this->getCampaignModel()->getEventRepository()->getCampaignEvents(
+                    $entity->getId()
+                );
+                $leadCount         = $this->getCampaignModel()->getRepository()->getCampaignLeadCount(
+                    $entity->getId(),
+                    null,
+                    [],
+                    $dateRangeValues
+                );
+                $campaignLogCounts = $eventLogRepo->getCampaignLogCounts(
+                    $entity->getId(),
+                    false,
+                    false,
+                    $dateRangeValues
+                );
                 $sortedEvents      = [
                     'decision'  => [],
                     'action'    => [],
@@ -705,6 +747,7 @@ class CampaignController extends AbstractStandardFormController
                                 'ignoreAjax' => true,
                             ]
                         )->getContent(),
+                        'tabDataMode'     => $tabDataMode,
                     ]
                 );
                 break;

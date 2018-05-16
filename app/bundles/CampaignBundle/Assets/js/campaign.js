@@ -9,6 +9,21 @@ Mautic.campaignOnLoad = function (container, response) {
         Mautic.activateSearchAutocomplete('list-search', 'campaign');
     }
 
+    // hide or show data toggle selector on tab content
+    mQuery('ul.nav-tabs>li>a').on('click', function(){
+        var showTabs = ['#actions-container', '#decisions-container', '#conditions-container']
+        if (showTabs.indexOf(this.hash) != -1){
+            mQuery('#campaignTabDataToggle').show()
+        } else {
+            mQuery('#campaignTabDataToggle').hide()
+        }
+    });
+
+    // register click event to reload tab data using ajax
+    mQuery("input[name=tabDataMode]").change(function(){
+        Mautic.toggleCampaignTabData(this);
+    });
+
     if (mQuery('#CampaignEventPanel').length) {
         // setup button clicks
         mQuery('#CampaignEventPanelGroups button').on('click', function() {
@@ -1855,4 +1870,45 @@ Mautic.cancelScheduledCampaignEvent = function(eventId, contactId) {
             }
         }, false
     );
+};
+
+/**
+ * Toggle Campaign Actions Tab Results
+ *
+ * @param elem
+ */
+Mautic.toggleCampaignTabData = function (elem) {
+    var $elem = mQuery(elem);
+    $elem.parent('label').siblings('label.btn-success').removeClass('btn-success');
+    $elem.parent('label').addClass('btn-success');
+    var mode = $elem.data('mode');
+    var cid = $elem.data('campaignid');
+    var daterangeForm = '';
+
+    if (mode === 'byDate') {
+        // get daterange form values to add to action url
+        var toDate = mQuery('#daterange_date_to').val();
+        var fromDate = mQuery('#daterange_date_from').val();
+        var daterangeForm = '&fromDate=' + fromDate + '&toDate=' + toDate;
+    }
+
+    Mautic.activateBackdrop();
+
+    mQuery.ajax({
+        url: mauticAjaxUrl,
+        type: 'POST',
+        data: 'action=campaign:toggleCampaignTabData&mode=' + mode + '&campaignId=' + cid + daterangeForm,
+        dataType: 'json',
+        success: function (response) {
+            if(mQuery('#decisions-container').length>0) { mQuery('#decisions-container').html(response.decisions); }
+            if(mQuery('#actions-container').length>0) { mQuery('#actions-container').html(response.actions); }
+            if(mQuery('#conditions-container').length>0) { mQuery('#conditions-container').html(response.conditions); }
+            mQuery('#mautic-backdrop').hide();
+        },
+        error: function (request, textStatus, errorThrown) {
+            //mQuery(elem).removeClass('fa-spin fa-spinner');
+            Mautic.processAjaxError(request, textStatus, errorThrown);
+        }
+    });
+
 };
